@@ -2,69 +2,44 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Daggerheart Tracker iOS</title>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #000; color: #fff; overflow-x: hidden;}
-header { padding: 15px; text-align: center; font-size: 1.2em; border-bottom: 1px solid #333; position: relative; z-index: 10; }
-.section { position: absolute; top: 60px; left: 0; width: 100%; padding: 20px; min-height: calc(100vh - 120px); overflow-y: auto; background: #000; color: #fff; transition: transform 0.3s ease, opacity 0.3s ease; }
-.section:not(.active) { opacity: 0; pointer-events: none; }
-.section.active { opacity: 1; pointer-events: auto; }
-.character, .npc { display: flex; background: #111; padding: 10px; border-radius: 12px; margin-bottom: 10px; align-items: flex-start; }
-.char-left, .npc-left { width: 60px; display: flex; flex-direction: column; align-items: center; margin-right: 10px; }
-.avatar-preview { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #333; margin-bottom: 5px; cursor: pointer; transition: transform 0.2s ease; }
-.avatar-preview.clicked { transform: scale(1.2); }
-.char-right, .npc-right { flex: 1; }
-input[type=text] { width: 180px; padding: 5px; margin-left: 5px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; }
-.stat { margin-top: 8px; display: flex; align-items: center; gap: 5px; }
-.stat-label { width: 70px; }
-.block { width: 25px; height: 25px; border-radius: 5px; border: 1px solid #333; cursor: pointer; background: #111; transition: all 0.2s; }
-.block.hp-filled { background: green; }
-.block.stress-filled { background: red; }
-.hope .star { font-size: 20px; cursor: pointer; color: gray; transition: transform 0.2s; }
-.hope .star.filled { color: gold; transform: scale(1.2); }
-button { margin-top: 8px; padding: 5px 12px; border: none; border-radius: 10px; background: #222; color: #fff; cursor: pointer; }
-button:hover { background: #333; }
-.tabs { display: flex; margin-bottom: 5px; gap: 5px; overflow-x: auto; align-items:center; }
-.tab { padding: 5px 10px; border-radius: 8px; background: #222; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; opacity: 1; transform: scale(1); transition: all 0.3s ease;}
-.tab.active { background: #555; }
-.tab-content { display: none; margin-top: 5px; opacity: 0; transform: scale(0.95); transition: all 0.3s ease; }
-.tab-content.active { display: block; opacity: 1; transform: scale(1); }
-textarea { width: 100%; height: 80px; resize: vertical; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; padding: 5px; margin-bottom:5px;}
-.avatar-input { display: none; }
-.fade-in { animation: fadeIn 0.3s forwards; }
-.fade-out { animation: fadeOut 0.3s forwards; }
-@keyframes fadeIn { from {opacity: 0; transform: scale(0.8);} to {opacity: 1; transform: scale(1);} }
-@keyframes fadeOut { from {opacity: 1; transform: scale(1);} to {opacity: 0; transform: scale(0.8);} }
-.remove-btn { background: #800; color: #fff; font-size: 14px; border-radius: 8px; padding: 2px 6px; cursor:pointer;}
-.remove-btn:hover { background: #a00; }
-
-/* Tab Bar */
+body, html { margin:0; padding:0; width:100vw; height:100vh; overflow-x:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#000; color:#fff; }
+header { padding:15px; text-align:center; font-size:1.2em; border-bottom:1px solid #333; position:relative; z-index:10; }
+.section { position:absolute; top:60px; left:0; width:100%; height:calc(100vh - 120px); overflow-y:auto; overflow-x:hidden; padding:10px; transition: opacity 0.3s ease; }
+.section:not(.active) { display:none; opacity:0; pointer-events:none; }
+.character, .npc { display:flex; background:#111; padding:10px; border-radius:12px; margin-bottom:10px; align-items:flex-start; }
+.char-left, .npc-left { width:80px; display:flex; flex-direction:column; align-items:center; margin-right:10px; }
+.avatar-preview { width:80px; height:160px; border-radius:8px; object-fit:cover; border:1px solid #333; margin-bottom:5px; cursor:pointer; transition:transform 0.2s ease; }
+.avatar-preview.clicked { transform:scale(1.05); }
+.char-right, .npc-right { flex:1; }
+input[type=text] { width:180px; padding:5px; margin-left:5px; border-radius:8px; border:1px solid #333; background:#222; color:#fff; }
+.stat { margin-top:8px; display:flex; align-items:center; gap:5px; }
+.stat-label { width:70px; }
+.block { width:25px; height:25px; border-radius:5px; border:1px solid #333; cursor:pointer; background:#111; transition:all 0.2s; }
+.block.hp-filled { background:green; }
+.block.stress-filled { background:red; }
+.hope .star { font-size:20px; cursor:pointer; color:gray; transition:transform 0.2s; }
+.hope .star.filled { color:gold; transform:scale(1.2); }
+button { margin-top:8px; padding:5px 12px; border:none; border-radius:10px; background:#222; color:#fff; cursor:pointer; }
+button:hover { background:#333; }
+.tabs { display:flex; margin-bottom:5px; gap:5px; overflow-x:auto; align-items:center; }
+.tab { padding:5px 10px; border-radius:8px; background:#222; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:5px; }
+.tab.active { background:#555; }
+.tab-content { display:none; margin-top:5px; height:calc(100% - 40px); overflow-y:auto; overflow-x:hidden; }
+.tab-content.active { display:block; }
+textarea { width:100%; height:80px; resize:vertical; border-radius:8px; border:1px solid #333; background:#111; color:#fff; padding:5px; margin-bottom:5px;}
+.avatar-input { display:none; }
+.remove-btn { background:#800; color:#fff; font-size:14px; border-radius:8px; padding:2px 6px; cursor:pointer; }
+.remove-btn:hover { background:#a00; }
 #tab-bar { position:fixed; bottom:0; left:0; width:100%; display:flex; justify-content:space-around; background:#111; border-top:1px solid #333; padding:10px 0; z-index:20; }
 #tab-bar button { flex:1; margin:0 5px; padding:8px 0; border-radius:12px; border:none; background:#222; color:#fff; font-size:16px; cursor:pointer; transition: all 0.2s; }
 #tab-bar button:hover { background:#333; }
 #tab-bar button.active { background:#555; font-weight:bold; }
-
-/* Кнопка + в кружке */
-#add-note-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #222;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
-  flex-shrink: 0;
-  transition: background 0.2s;
-  margin-left: 5px;
-}
-#add-note-btn:hover { background: #555; }
+#add-note-btn { width:30px; height:30px; border-radius:50%; background:#222; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold; font-size:18px; flex-shrink:0; transition:background 0.2s; margin-left:5px; }
+#add-note-btn:hover { background:#555; }
 .editable-title { outline:none; }
-
 </style>
 </head>
 <body>
@@ -89,7 +64,6 @@ textarea { width: 100%; height: 80px; resize: vertical; border-radius: 8px; bord
   <div id="notes-contents"></div>
 </div>
 
-<!-- Tab Bar -->
 <div id="tab-bar">
   <button onclick="switchSection(0)">Персонажи</button>
   <button onclick="switchSection(1)">NPC</button>
@@ -98,63 +72,59 @@ textarea { width: 100%; height: 80px; resize: vertical; border-radius: 8px; bord
 
 <script>
 // ===== LocalStorage =====
-function saveData() {
+function saveData(){
   const characters = [];
-  document.querySelectorAll('.character').forEach(c => {
+  document.querySelectorAll('.character').forEach(c=>{
     characters.push({
-      avatar: c.querySelector('.avatar-preview').src,
-      name: c.querySelector('.name-input').value,
-      hp: Array.from(c.querySelectorAll('.block.hp')).map(b => b.classList.contains('hp-filled')),
-      stress: Array.from(c.querySelectorAll('.block.stress')).map(b => b.classList.contains('stress-filled')),
-      hope: Array.from(c.querySelectorAll('.hope .star')).map(s => s.classList.contains('filled'))
+      avatar:c.querySelector('.avatar-preview').src,
+      name:c.querySelector('.name-input').value,
+      hp:Array.from(c.querySelectorAll('.block.hp')).map(b=>b.classList.contains('hp-filled')),
+      stress:Array.from(c.querySelectorAll('.block.stress')).map(b=>b.classList.contains('stress-filled')),
+      hope:Array.from(c.querySelectorAll('.hope .star')).map(s=>s.classList.contains('filled'))
     });
   });
-  const npcs = [];
-  document.querySelectorAll('.npc').forEach(n => {
+  const npcs=[];
+  document.querySelectorAll('.npc').forEach(n=>{
     npcs.push({
-      avatar: n.querySelector('.avatar-preview').src,
-      name: n.querySelector('.npc-name').value,
-      hp: Array.from(n.querySelectorAll('.block.hp')).map(b => b.classList.contains('hp-filled')),
-      stress: Array.from(n.querySelectorAll('.block.stress')).map(b => b.classList.contains('stress-filled')),
-      hope: Array.from(n.querySelectorAll('.hope .star')).map(s => s.classList.contains('filled'))
+      avatar:n.querySelector('.avatar-preview').src,
+      name:n.querySelector('.npc-name').value,
+      hp:Array.from(n.querySelectorAll('.block.hp')).map(b=>b.classList.contains('hp-filled')),
+      stress:Array.from(n.querySelectorAll('.block.stress')).map(b=>b.classList.contains('stress-filled')),
+      hope:Array.from(n.querySelectorAll('.hope .star')).map(s=>s.classList.contains('filled'))
     });
   });
-  const notes = [];
-  document.querySelectorAll('.tab').forEach(tab => {
-    const id = tab.dataset.tab;
-    const content = document.getElementById('tab-content-' + id);
-    const blocks = Array.from(content.querySelectorAll('textarea')).map(ta=>ta.value);
-    notes.push({ title: tab.querySelector('.editable-title').textContent, texts: blocks });
+  const notes=[];
+  document.querySelectorAll('.tab').forEach(tab=>{
+    const id=tab.dataset.tab;
+    const content=document.getElementById('tab-content-'+id);
+    const blocks=Array.from(content.querySelectorAll('textarea')).map(ta=>ta.value);
+    notes.push({title:tab.querySelector('.editable-title').textContent,texts:blocks});
   });
-  localStorage.setItem('daggerheart', JSON.stringify({characters, npcs, notes}));
+  localStorage.setItem('daggerheart',JSON.stringify({characters,npcs,notes}));
 }
 
-function loadData() {
-  const data = JSON.parse(localStorage.getItem('daggerheart') || '{}');
-  if(data.characters) data.characters.forEach(c => addCharacter(c));
-  if(data.npcs) data.npcs.forEach(n => addNPC(n));
-  if(data.notes) { noteCounter = 0; data.notes.forEach(n => addNoteTab(n.title, n.texts)); }
+function loadData(){
+  const data=JSON.parse(localStorage.getItem('daggerheart')||'{}');
+  if(data.characters) data.characters.forEach(c=>addCharacter(c));
+  if(data.npcs) data.npcs.forEach(n=>addNPC(n));
+  if(data.notes){ noteCounter=0; data.notes.forEach(n=>addNoteTab(n.title,n.texts)); }
 }
 
 // ===== RPG-стат блоки =====
-function createBlockRow(label, type, values) {
-  const div = document.createElement('div'); div.className='stat';
-  const lbl = document.createElement('div'); lbl.className='stat-label'; lbl.textContent = label;
+function createBlockRow(label,type,values){
+  const div=document.createElement('div'); div.className='stat';
+  const lbl=document.createElement('div'); lbl.className='stat-label'; lbl.textContent=label;
   div.appendChild(lbl);
-  const blocks = [];
+  const blocks=[];
   for(let i=0;i<7;i++){
-    const block = document.createElement('div'); block.className='block ' + type;
-    if(values && values[i]) block.classList.add(type+'-filled');
-    block.addEventListener('click', ()=>{
-      blocks.forEach((b, idx)=>{
-        if(idx <= i) b.classList.add(type+'-filled');
-        else b.classList.remove(type+'-filled');
-      });
-      block.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}], {duration:150});
+    const block=document.createElement('div'); block.className='block '+type;
+    if(values&&values[i]) block.classList.add(type+'-filled');
+    block.addEventListener('click',()=>{
+      blocks.forEach((b,idx)=>{ if(idx<=i)b.classList.add(type+'-filled'); else b.classList.remove(type+'-filled'); });
+      block.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:150});
       saveData();
     });
-    div.appendChild(block);
-    blocks.push(block);
+    div.appendChild(block); blocks.push(block);
   }
   return div;
 }
@@ -167,12 +137,11 @@ function createHopeRow(values){
   for(let i=0;i<7;i++){
     const star=document.createElement('span'); star.className='star'; star.dataset.value=i+1; star.textContent=(values&&values[i])?'★':'☆';
     if(values&&values[i]) star.classList.add('filled');
-    star.addEventListener('click', ()=>{
+    star.addEventListener('click',()=>{
       container.querySelectorAll('.star').forEach((s,idx)=>{
         if(idx<=i){ s.classList.add('filled'); s.textContent='★'; s.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:150}); }
-        else{s.classList.remove('filled'); s.textContent='☆';}
-      });
-      saveData();
+        else{ s.classList.remove('filled'); s.textContent='☆'; }
+      }); saveData();
     });
     container.appendChild(star);
   }
@@ -181,22 +150,18 @@ function createHopeRow(values){
 
 // ===== Аватар =====
 function addAvatarLogic(div){
-  const input = div.querySelector('.avatar-input');
-  const preview = div.querySelector('.avatar-preview');
-  preview.addEventListener('click', ()=>{
+  const input=div.querySelector('.avatar-input');
+  const preview=div.querySelector('.avatar-preview');
+  preview.addEventListener('click',()=>{
     preview.classList.add('clicked');
     setTimeout(()=>preview.classList.remove('clicked'),200);
     input.click();
   });
-  input.addEventListener('change', e=>{
-    const file = e.target.files[0];
+  input.addEventListener('change',e=>{
+    const file=e.target.files[0];
     if(file){
-      const reader = new FileReader();
-      reader.onload = function(ev){
-        preview.src = ev.target.result;
-        preview.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}], {duration:200});
-        saveData();
-      };
+      const reader=new FileReader();
+      reader.onload=function(ev){ preview.src=ev.target.result; preview.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:200}); saveData(); };
       reader.readAsDataURL(file);
     }
   });
@@ -204,136 +169,78 @@ function addAvatarLogic(div){
 
 // ===== Персонажи =====
 function addCharacter(data){
-  const div=document.createElement('div'); div.className='character fade-in';
-  div.innerHTML=`
-    <div class="char-left">
-      <img class="avatar-preview" src="${data?.avatar||''}" alt="Аватар"/>
-      <input type="file" class="avatar-input" accept="image/*"/>
-    </div>
-    <div class="char-right">
-      Имя: <input type="text" class="name-input" placeholder="Имя персонажа">
-      <button class="remove-btn" onclick="removeCharacter(this)">🗑️</button>
-    </div>
-  `;
+  const div=document.createElement('div'); div.className='character';
+  div.innerHTML=`<div class="char-left"><img class="avatar-preview" src="${data?.avatar||''}"/><input type="file" class="avatar-input" accept="image/*"/></div>
+  <div class="char-right">Имя:<input type="text" class="name-input" placeholder="Имя персонажа"><button class="remove-btn" onclick="removeCharacter(this)">🗑️</button></div>`;
   if(data?.name) div.querySelector('.name-input').value=data.name;
-  div.querySelector('.name-input').addEventListener('input',saveData);
-  addAvatarLogic(div);
-  div.querySelector('.char-right').appendChild(createBlockRow('HP','hp', data?.hp));
-  div.querySelector('.char-right').appendChild(createBlockRow('Stress','stress', data?.stress));
+  div.querySelector('.char-right').appendChild(createBlockRow('HP','hp',data?.hp));
+  div.querySelector('.char-right').appendChild(createBlockRow('Stress','stress',data?.stress));
   div.querySelector('.char-right').appendChild(createHopeRow(data?.hope));
   document.getElementById('characters-container').appendChild(div);
-  setTimeout(()=>div.classList.remove('fade-in'),300);
-  saveData();
+  addAvatarLogic(div); saveData();
 }
-function removeCharacter(btn){ const div=btn.closest('.character'); div.classList.add('fade-out'); setTimeout(()=>{ div.remove(); saveData(); },300); }
+function removeCharacter(btn){ btn.closest('.character').remove(); saveData(); }
 
 // ===== NPC =====
 function addNPC(data){
-  const div=document.createElement('div'); div.className='npc fade-in';
-  div.innerHTML=`
-    <div class="npc-left">
-      <img class="avatar-preview" src="${data?.avatar||''}" alt="Аватар"/>
-      <input type="file" class="avatar-input" accept="image/*"/>
-    </div>
-    <div class="npc-right">
-      Имя: <input type="text" class="npc-name" placeholder="Имя NPC">
-      <button class="remove-btn" onclick="removeNPC(this)">🗑️</button>
-    </div>
-  `;
-  if(data?.name) div.querySelector('.npc-name').value=data.name;
-  div.querySelector('.npc-name').addEventListener('input',saveData);
-  addAvatarLogic(div);
-  div.querySelector('.npc-right').appendChild(createBlockRow('HP','hp', data?.hp));
-  div.querySelector('.npc-right').appendChild(createBlockRow('Stress','stress', data?.stress));
+  const div=document.createElement('div'); div.className='npc';
+  div.innerHTML=`<div class="npc-left"><img class="avatar-preview" src="${data?.avatar||''}"/><input type="file" class="avatar-input" accept="image/*"/></div>
+  <div class="npc-right">Имя:<input type="text" class="npc-name" placeholder="NPC"><button class="remove-btn" onclick="removeNPC(this)">🗑️</button></div>`;
+  div.querySelector('.npc-right').appendChild(createBlockRow('HP','hp',data?.hp));
+  div.querySelector('.npc-right').appendChild(createBlockRow('Stress','stress',data?.stress));
   div.querySelector('.npc-right').appendChild(createHopeRow(data?.hope));
   document.getElementById('npc-container').appendChild(div);
-  setTimeout(()=>div.classList.remove('fade-in'),300);
-  saveData();
+  addAvatarLogic(div); saveData();
 }
-function removeNPC(btn){ const div=btn.closest('.npc'); div.classList.add('fade-out'); setTimeout(()=>{ div.remove(); saveData(); },300); }
+function removeNPC(btn){ btn.closest('.npc').remove(); saveData(); }
 
 // ===== Заметки =====
 let noteCounter=0;
-function addNoteTab(title='Новая заметка', texts=['']){
-    const tabId = noteCounter++;
-    const tabsDiv = document.getElementById('notes-tabs');
-    const contentDiv = document.getElementById('notes-contents');
+const scrollPositions={};
+function addNoteTab(title,blocks){
+  const id=noteCounter++;
+  const tabs=document.getElementById('notes-tabs');
+  const contents=document.getElementById('notes-contents');
 
-    // Вкладка
-    const tab = document.createElement('div');
-    tab.className = 'tab';
-    tab.dataset.tab = tabId;
-    tab.innerHTML = `<span class="editable-title" contenteditable="true">${title}</span> <span class="remove-btn" onclick="removeNoteTab(${tabId})">🗑️</span>`;
-    tabsDiv.insertBefore(tab, document.getElementById('add-note-btn'));
+  const tab=document.createElement('div'); tab.className='tab'; tab.dataset.tab=id;
+  tab.innerHTML=`<span class="editable-title" contenteditable="true">${title||'Новая заметка'}</span><span class="remove-btn" onclick="removeNoteTab(${id})">🗑️</span>`;
+  tab.addEventListener('click',()=>switchNoteTab(id));
+  tabs.appendChild(tab);
 
-    // Контент
-    const content = document.createElement('div');
-    content.id = 'tab-content-'+tabId;
-    content.className = 'tab-content';
-    contentDiv.appendChild(content);
-
-    // Добавляем textarea
-    texts.forEach(t => addNoteBlock(content, t));
-
-    // Кнопка добавить блок
-    const addBlockBtn = document.createElement('button');
-    addBlockBtn.textContent = 'Добавить блок';
-    addBlockBtn.addEventListener('click', () => addNoteBlock(content));
-    content.appendChild(addBlockBtn);
-
-    // Редактируемое имя вкладки
-    tab.querySelector('.editable-title').addEventListener('input', saveData);
-
-    switchNoteTab(tabId);
-    saveData();
-}
-
-// Добавление блока textarea
-function addNoteBlock(contentDiv, text=''){
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.addEventListener('input', ()=>{ autoResizeTextarea(ta); saveData(); });
-    autoResizeTextarea(ta);
-    const btn = contentDiv.querySelector('button');
-    if(btn) contentDiv.insertBefore(ta, btn);
-    else contentDiv.appendChild(ta);
-}
-
-// Адаптивная высота
-function autoResizeTextarea(textarea){ textarea.style.height='auto'; textarea.style.height=textarea.scrollHeight+'px'; }
-
-// Переключение вкладок заметок
-function switchNoteTab(id){
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    const tab=document.querySelector(`.tab[data-tab='${id}']`); if(tab) tab.classList.add('active');
-    const content=document.getElementById('tab-content-'+id); if(content) content.classList.add('active');
+  const content=document.createElement('div'); content.className='tab-content'; content.id='tab-content-'+id;
+  (blocks||[]).forEach(text=>{ const ta=document.createElement('textarea'); ta.value=text; ta.addEventListener('input',saveData); content.appendChild(ta); });
+  const addBlockBtn=document.createElement('button'); addBlockBtn.textContent='+ Добавить блок'; addBlockBtn.onclick=()=>{ const ta=document.createElement('textarea'); ta.addEventListener('input',saveData); content.appendChild(ta); saveData(); };
+  content.appendChild(addBlockBtn);
+  contents.appendChild(content);
+  switchNoteTab(id); saveData();
 }
 
 function removeNoteTab(id){
-    const tab=document.querySelector(`.tab[data-tab='${id}']`); if(tab) tab.remove();
-    const content=document.getElementById('tab-content-'+id); if(content) content.remove();
-    saveData();
+  document.querySelector(`.tab[data-tab='${id}']`)?.remove();
+  document.getElementById('tab-content-'+id)?.remove();
+  saveData();
 }
 
-// ===== Кнопка + для заметок =====
-const addBtn = document.createElement('div');
-addBtn.id = 'add-note-btn';
-addBtn.textContent = '+';
-addBtn.addEventListener('click', ()=>addNoteTab());
-document.getElementById('notes-tabs').appendChild(addBtn);
+function switchNoteTab(id){
+  const current=document.querySelector('.tab-content.active');
+  if(current) scrollPositions[current.id]=current.scrollTop;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const tab=document.querySelector(`.tab[data-tab='${id}']`); if(tab) tab.classList.add('active');
+  const content=document.getElementById('tab-content-'+id); content.classList.add('active');
+  content.scrollTop = scrollPositions[content.id]||0;
+}
 
-// ===== Tab Bar =====
-let sections=['characters-section','npc-section','notes-section'], currentSection=0;
+// ===== Навигация =====
 function switchSection(index){
-    sections.forEach((sec,i)=>document.getElementById(sec).classList.toggle('active',i===index));
-    document.querySelectorAll('#tab-bar button').forEach((b,i)=>b.classList.toggle('active',i===index));
+  const sections=['characters-section','npc-section','notes-section'];
+  sections.forEach((sec,i)=>document.getElementById(sec).classList.toggle('active',i===index));
+  document.querySelectorAll('#tab-bar button').forEach((b,i)=>b.classList.toggle('active',i===index));
 }
 
 // ===== INIT =====
 loadData();
 switchSection(0);
-
 </script>
 
 </body>
