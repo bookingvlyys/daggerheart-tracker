@@ -11,8 +11,7 @@ header { padding:15px; text-align:center; font-size:1.2em; border-bottom:1px sol
 .section:not(.active) { display:none; opacity:0; pointer-events:none; }
 .character, .npc { display:flex; background:#111; padding:10px; border-radius:12px; margin-bottom:10px; align-items:flex-start; }
 .char-left, .npc-left { width:80px; display:flex; flex-direction:column; align-items:center; margin-right:10px; }
-.avatar-preview { width:80px; height:160px; border-radius:8px; object-fit:cover; border:1px solid #333; margin-bottom:5px; cursor:pointer; transition:transform 0.2s ease; }
-.avatar-preview.clicked { transform:scale(1.05); }
+.avatar-preview { width:80px; min-height:80px; object-fit:cover; border-radius:8px; border:1px solid #333; margin-bottom:5px; cursor:pointer; transition:transform 0.2s ease, height 0.2s ease; }
 .char-right, .npc-right { flex:1; }
 input[type=text] { width:180px; padding:5px; margin-left:5px; border-radius:8px; border:1px solid #333; background:#222; color:#fff; }
 .stat { margin-top:8px; display:flex; align-items:center; gap:5px; }
@@ -39,7 +38,8 @@ textarea { width:100%; height:80px; resize:vertical; border-radius:8px; border:1
 #tab-bar button.active { background:#555; font-weight:bold; }
 #add-note-btn { width:30px; height:30px; border-radius:50%; background:#222; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold; font-size:18px; flex-shrink:0; transition:background 0.2s; margin-left:5px; }
 #add-note-btn:hover { background:#555; }
-.editable-title { outline:none; }
+.edit-name-btn { margin-left:5px; cursor:pointer; opacity:0.5; font-size:14px; transition:opacity 0.2s; }
+.edit-name-btn:hover { opacity:1; }
 </style>
 </head>
 <body>
@@ -59,7 +59,10 @@ textarea { width:100%; height:80px; resize:vertical; border-radius:8px; border:1
 </div>
 
 <div class="section" id="notes-section">
-  <h2>Заметки</h2>
+  <h2 style="display:flex; align-items:center; gap:8px;">
+    Заметки
+    <div id="add-note-btn">+</div>
+  </h2>
   <div class="tabs" id="notes-tabs"></div>
   <div id="notes-contents"></div>
 </div>
@@ -98,7 +101,7 @@ function saveData(){
     const id=tab.dataset.tab;
     const content=document.getElementById('tab-content-'+id);
     const blocks=Array.from(content.querySelectorAll('textarea')).map(ta=>ta.value);
-    notes.push({title:tab.querySelector('.editable-title').textContent,texts:blocks});
+    notes.push({title:tab.querySelector('.tab-title').textContent,texts:blocks});
   });
   localStorage.setItem('daggerheart',JSON.stringify({characters,npcs,notes}));
 }
@@ -120,64 +123,87 @@ function createBlockRow(label,type,values){
     const block=document.createElement('div'); block.className='block '+type;
     if(values&&values[i]) block.classList.add(type+'-filled');
     block.addEventListener('click',()=>{
-      blocks.forEach((b,idx)=>{ if(idx<=i)b.classList.add(type+'-filled'); else b.classList.remove(type+'-filled'); });
+      if(i===0 && block.classList.contains(type+'-filled')){
+        blocks.forEach(b=>b.classList.remove(type+'-filled'));
+      } else {
+        blocks.forEach((b,idx)=>{
+          if(idx<=i) b.classList.add(type+'-filled');
+          else b.classList.remove(type+'-filled');
+        });
+      }
       block.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:150});
       saveData();
     });
-    div.appendChild(block); blocks.push(block);
+    blocks.push(block);
+    div.appendChild(block);
   }
   return div;
 }
 
 function createHopeRow(values){
-  const div=document.createElement('div'); div.className='stat';
-  const lbl=document.createElement('div'); lbl.className='stat-label'; lbl.textContent='Hope';
+  const div=document.createElement('div'); div.className='stat hope';
+  const lbl=document.createElement('div'); lbl.className='stat-label'; lbl.textContent='Надежда';
   div.appendChild(lbl);
-  const container=document.createElement('span'); container.className='hope';
+  const stars=[];
   for(let i=0;i<7;i++){
-    const star=document.createElement('span'); star.className='star'; star.dataset.value=i+1; star.textContent=(values&&values[i])?'★':'☆';
+    const star=document.createElement('span'); star.className='star';
+    star.textContent=values&&values[i]?'★':'☆';
     if(values&&values[i]) star.classList.add('filled');
     star.addEventListener('click',()=>{
-      container.querySelectorAll('.star').forEach((s,idx)=>{
-        if(idx<=i){ s.classList.add('filled'); s.textContent='★'; s.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:150}); }
-        else{ s.classList.remove('filled'); s.textContent='☆'; }
-      }); saveData();
+      const allStars=Array.from(div.querySelectorAll('.star'));
+      if(i===0 && star.classList.contains('filled')){
+        allStars.forEach(s=>{ s.classList.remove('filled'); s.textContent='☆'; });
+      } else {
+        allStars.forEach((s,idx)=>{
+          if(idx<=i){ s.classList.add('filled'); s.textContent='★'; s.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:150}); }
+          else{ s.classList.remove('filled'); s.textContent='☆'; }
+        });
+      }
+      saveData();
     });
-    container.appendChild(star);
+    stars.push(star);
+    div.appendChild(star);
   }
-  div.appendChild(container); return div;
+  return div;
 }
 
-// ===== Аватар =====
+// ===== Avatar logic =====
 function addAvatarLogic(div){
-  const input=div.querySelector('.avatar-input');
-  const preview=div.querySelector('.avatar-preview');
-  preview.addEventListener('click',()=>{
-    preview.classList.add('clicked');
-    setTimeout(()=>preview.classList.remove('clicked'),200);
-    input.click();
-  });
-  input.addEventListener('change',e=>{
-    const file=e.target.files[0];
-    if(file){
-      const reader=new FileReader();
-      reader.onload=function(ev){ preview.src=ev.target.result; preview.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:200}); saveData(); };
-      reader.readAsDataURL(file);
-    }
-  });
+  const input=div.querySelector('.avatar-input'); const img=div.querySelector('.avatar-preview');
+  input.addEventListener('change',()=>{ const file=input.files[0]; if(file){ const reader=new FileReader(); reader.onload=e=>{ img.src=e.target.result; saveData(); }; reader.readAsDataURL(file); } });
+  img.addEventListener('click',()=>input.click());
 }
+
+// ===== Resize avatar =====
+function resizeAvatar(div){
+  const avatar = div.querySelector('.avatar-preview');
+  const right = div.querySelector('.char-right, .npc-right');
+  const rightHeight = right.offsetHeight;
+  avatar.style.height = Math.max(rightHeight, 80) + 'px'; // минимальная 80px
+}
+window.addEventListener('resize',()=>{
+  document.querySelectorAll('.character, .npc').forEach(resizeAvatar);
+});
 
 // ===== Персонажи =====
 function addCharacter(data){
   const div=document.createElement('div'); div.className='character';
   div.innerHTML=`<div class="char-left"><img class="avatar-preview" src="${data?.avatar||''}"/><input type="file" class="avatar-input" accept="image/*"/></div>
-  <div class="char-right">Имя:<input type="text" class="name-input" placeholder="Имя персонажа"><button class="remove-btn" onclick="removeCharacter(this)">🗑️</button></div>`;
-  if(data?.name) div.querySelector('.name-input').value=data.name;
+  <div class="char-right">Имя: <input type="text" class="name-input" placeholder="Имя персонажа" value="${data?.name||''}" readonly>
+  <span class="edit-name-btn">✎</span>
+  <button class="remove-btn" onclick="removeCharacter(this)">🗑️</button></div>`;
+  const editBtn=div.querySelector('.edit-name-btn'); const nameInput=div.querySelector('.name-input');
+  editBtn.addEventListener('click',()=>{
+    const newName=prompt('Введите имя персонажа',nameInput.value);
+    if(newName) nameInput.value=newName; saveData();
+  });
   div.querySelector('.char-right').appendChild(createBlockRow('HP','hp',data?.hp));
   div.querySelector('.char-right').appendChild(createBlockRow('Stress','stress',data?.stress));
   div.querySelector('.char-right').appendChild(createHopeRow(data?.hope));
   document.getElementById('characters-container').appendChild(div);
-  addAvatarLogic(div); saveData();
+  addAvatarLogic(div);
+  resizeAvatar(div);
+  saveData();
 }
 function removeCharacter(btn){ btn.closest('.character').remove(); saveData(); }
 
@@ -185,42 +211,45 @@ function removeCharacter(btn){ btn.closest('.character').remove(); saveData(); }
 function addNPC(data){
   const div=document.createElement('div'); div.className='npc';
   div.innerHTML=`<div class="npc-left"><img class="avatar-preview" src="${data?.avatar||''}"/><input type="file" class="avatar-input" accept="image/*"/></div>
-  <div class="npc-right">Имя:<input type="text" class="npc-name" placeholder="NPC"><button class="remove-btn" onclick="removeNPC(this)">🗑️</button></div>`;
+  <div class="npc-right">Имя: <input type="text" class="npc-name" placeholder="NPC" value="${data?.name||''}" readonly>
+  <span class="edit-name-btn">✎</span>
+  <button class="remove-btn" onclick="removeNPC(this)">🗑️</button></div>`;
+  const editBtn=div.querySelector('.edit-name-btn'); const nameInput=div.querySelector('.npc-name');
+  editBtn.addEventListener('click',()=>{
+    const newName=prompt('Введите имя NPC',nameInput.value);
+    if(newName) nameInput.value=newName; saveData();
+  });
   div.querySelector('.npc-right').appendChild(createBlockRow('HP','hp',data?.hp));
   div.querySelector('.npc-right').appendChild(createBlockRow('Stress','stress',data?.stress));
   div.querySelector('.npc-right').appendChild(createHopeRow(data?.hope));
   document.getElementById('npc-container').appendChild(div);
-  addAvatarLogic(div); saveData();
+  addAvatarLogic(div);
+  resizeAvatar(div);
+  saveData();
 }
 function removeNPC(btn){ btn.closest('.npc').remove(); saveData(); }
 
 // ===== Заметки =====
-let noteCounter=0;
-const scrollPositions={};
+let noteCounter=0; const scrollPositions={};
 function addNoteTab(title,blocks){
-  const id=noteCounter++;
-  const tabs=document.getElementById('notes-tabs');
-  const contents=document.getElementById('notes-contents');
-
+  const id=noteCounter++; const tabs=document.getElementById('notes-tabs'); const contents=document.getElementById('notes-contents');
   const tab=document.createElement('div'); tab.className='tab'; tab.dataset.tab=id;
-  tab.innerHTML=`<span class="editable-title" contenteditable="true">${title||'Новая заметка'}</span><span class="remove-btn" onclick="removeNoteTab(${id})">🗑️</span>`;
-  tab.addEventListener('click',()=>switchNoteTab(id));
+  const titleSpan=document.createElement('span'); titleSpan.className='tab-title'; titleSpan.textContent=title||'Новая заметка';
+  titleSpan.addEventListener('click',()=>switchNoteTab(id));
+  const editBtn=document.createElement('span'); editBtn.className='edit-btn'; editBtn.textContent='✎'; editBtn.style.opacity='0.5'; editBtn.style.cursor='pointer';
+  editBtn.addEventListener('click',(e)=>{ e.stopPropagation(); const newTitle=prompt('Введите название заметки',titleSpan.textContent); if(newTitle) titleSpan.textContent=newTitle; saveData(); });
+  const removeBtn=document.createElement('span'); removeBtn.className='remove-btn'; removeBtn.textContent='🗑️';
+  removeBtn.addEventListener('click',(e)=>{ e.stopPropagation(); removeNoteTab(id); });
+  tab.appendChild(titleSpan); tab.appendChild(editBtn); tab.appendChild(removeBtn);
   tabs.appendChild(tab);
-
   const content=document.createElement('div'); content.className='tab-content'; content.id='tab-content-'+id;
   (blocks||[]).forEach(text=>{ const ta=document.createElement('textarea'); ta.value=text; ta.addEventListener('input',saveData); content.appendChild(ta); });
-  const addBlockBtn=document.createElement('button'); addBlockBtn.textContent='+ Добавить блок'; addBlockBtn.onclick=()=>{ const ta=document.createElement('textarea'); ta.addEventListener('input',saveData); content.appendChild(ta); saveData(); };
-  content.appendChild(addBlockBtn);
-  contents.appendChild(content);
+  const addBlockBtn=document.createElement('button'); addBlockBtn.textContent='+ Добавить блок';
+  addBlockBtn.onclick=()=>{ const ta=document.createElement('textarea'); ta.addEventListener('input',saveData); content.appendChild(ta); saveData(); };
+  content.appendChild(addBlockBtn); contents.appendChild(content);
   switchNoteTab(id); saveData();
 }
-
-function removeNoteTab(id){
-  document.querySelector(`.tab[data-tab='${id}']`)?.remove();
-  document.getElementById('tab-content-'+id)?.remove();
-  saveData();
-}
-
+function removeNoteTab(id){ document.querySelector(`.tab[data-tab='${id}']`)?.remove(); document.getElementById('tab-content-'+id)?.remove(); saveData(); }
 function switchNoteTab(id){
   const current=document.querySelector('.tab-content.active');
   if(current) scrollPositions[current.id]=current.scrollTop;
@@ -239,8 +268,20 @@ function switchSection(index){
 }
 
 // ===== INIT =====
-loadData();
-switchSection(0);
+loadData(); switchSection(0);
+
+// ===== Enter / Shift+Enter =====
+document.addEventListener('keydown', e => {
+  if(e.target.tagName==='TEXTAREA'){
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); e.target.blur(); saveData(); }
+  }
+});
+document.addEventListener('input', e => {
+  if(e.target.tagName==='TEXTAREA'){ e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px'; }
+});
+
+// ===== Кнопка + для заметок =====
+document.getElementById('add-note-btn').addEventListener('click', ()=>addNoteTab());
 </script>
 
 </body>
