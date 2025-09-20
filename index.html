@@ -7,7 +7,7 @@
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #000; color: #fff; overflow-x: hidden;}
 header { padding: 15px; text-align: center; font-size: 1.2em; border-bottom: 1px solid #333; position: relative; z-index: 10; }
-.section { position: absolute; top: 60px; left: 0; width: 100%; padding: 20px; min-height: calc(100vh - 60px); overflow-y: auto; background: #000; color: #fff; transition: transform 0.3s ease, opacity 0.3s ease; }
+.section { position: absolute; top: 60px; left: 0; width: 100%; padding: 20px; min-height: calc(100vh - 120px); overflow-y: auto; background: #000; color: #fff; transition: transform 0.3s ease, opacity 0.3s ease; }
 .section:not(.active) { opacity: 0; pointer-events: none; }
 .section.active { opacity: 1; pointer-events: auto; }
 .character, .npc { display: flex; background: #111; padding: 10px; border-radius: 12px; margin-bottom: 10px; align-items: flex-start; }
@@ -19,8 +19,8 @@ input[type=text] { width: 180px; padding: 5px; margin-left: 5px; border-radius: 
 .stat { margin-top: 8px; display: flex; align-items: center; gap: 5px; }
 .stat-label { width: 70px; }
 .block { width: 25px; height: 25px; border-radius: 5px; border: 1px solid #333; cursor: pointer; background: #111; transition: all 0.2s; }
-.block.hp-filled { background: #0f0; }
-.block.stress-filled { background: #555; }
+.block.hp-filled { background: green; }
+.block.stress-filled { background: red; }
 .hope .star { font-size: 20px; cursor: pointer; color: gray; transition: transform 0.2s; }
 .hope .star.filled { color: gold; transform: scale(1.2); }
 button { margin-top: 8px; padding: 5px 12px; border: none; border-radius: 10px; background: #222; color: #fff; cursor: pointer; }
@@ -38,6 +38,13 @@ textarea { width: 100%; height: 80px; resize: vertical; border-radius: 8px; bord
 @keyframes fadeOut { from {opacity: 1; transform: scale(1);} to {opacity: 0; transform: scale(0.8);} }
 .remove-btn { background: #800; color: #fff; font-size: 14px; border-radius: 8px; padding: 2px 6px; cursor:pointer;}
 .remove-btn:hover { background: #a00; }
+
+/* Tab Bar */
+#tab-bar { position:fixed; bottom:0; left:0; width:100%; display:flex; justify-content:space-around; background:#111; border-top:1px solid #333; padding:10px 0; z-index:20; }
+#tab-bar button { flex:1; margin:0 5px; padding:8px 0; border-radius:12px; border:none; background:#222; color:#fff; font-size:16px; cursor:pointer; transition: all 0.2s; }
+#tab-bar button:hover { background:#333; }
+#tab-bar button.active { background:#555; font-weight:bold; }
+
 </style>
 </head>
 <body>
@@ -61,6 +68,13 @@ textarea { width: 100%; height: 80px; resize: vertical; border-radius: 8px; bord
   <div class="tabs" id="notes-tabs"></div>
   <div id="notes-contents"></div>
   <button onclick="addNoteTab()">Добавить вкладку</button>
+</div>
+
+<!-- Tab Bar -->
+<div id="tab-bar">
+  <button onclick="switchSection(0)">Персонажи</button>
+  <button onclick="switchSection(1)">NPC</button>
+  <button onclick="switchSection(2)">Заметки</button>
 </div>
 
 <script>
@@ -105,13 +119,13 @@ function loadData() {
 // ===== Стат блоки =====
 function createBlockRow(label, type, values) {
   const div = document.createElement('div'); div.className='stat';
-  const lbl = document.createElement('div'); lbl.className='stat-label'; lbl.textContent=label;
+  const lbl = document.createElement('div'); lbl.className='stat-label'; lbl.textContent = label;
   div.appendChild(lbl);
   for(let i=0;i<7;i++){
-    const block=document.createElement('div'); block.className='block '+type;
-    if(values && values[i]) block.classList.add(type==='hp'?'hp-filled':'stress-filled');
+    const block = document.createElement('div'); block.className='block ' + type;
+    if(values && values[i]) block.classList.add(type+'-filled');
     block.addEventListener('click', ()=>{
-      block.classList.toggle(type==='hp'?'hp-filled':'stress-filled');
+      block.classList.toggle(type+'-filled');
       block.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}], {duration:150});
       saveData();
     });
@@ -225,81 +239,53 @@ function removeNPC(btn){
 
 // ===== Заметки =====
 let noteCounter=0;
-function addNoteTab(title,text){
-  noteCounter++;
-  const tab=document.createElement('div'); tab.className='tab fade-in';
-  tab.textContent=title||'Tab '+noteCounter; tab.dataset.tab=noteCounter;
-  const removeBtn=document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.textContent='🗑️'; removeBtn.onclick=()=>removeNoteTab(tab); 
-  tab.appendChild(removeBtn);
-  tab.addEventListener('click',()=>selectNoteTab(noteCounter));
-  document.getElementById('notes-tabs').appendChild(tab);
+function addNoteTab(title='Новая вкладка', text=''){
+  const tabId = noteCounter++;
+  const tabsDiv=document.getElementById('notes-tabs');
+  const contentDiv=document.getElementById('notes-contents');
 
-  const content=document.createElement('div'); content.className='tab-content fade-in'; content.id='tab-content-'+noteCounter;
-  const textarea=document.createElement('textarea'); if(text) textarea.value=text;
-  textarea.addEventListener('input',saveData); content.appendChild(textarea);
-  document.getElementById('notes-contents').appendChild(content);
+  const tab = document.createElement('div'); tab.className='tab'; tab.dataset.tab=tabId; tab.innerHTML=`${title} <span class="remove-btn" onclick="removeNoteTab(${tabId})">🗑️</span>`;
+  tab.addEventListener('click', ()=>switchNoteTab(tabId));
+  tabsDiv.appendChild(tab);
 
-  selectNoteTab(noteCounter);
-  setTimeout(()=>{ tab.classList.remove('fade-in'); content.classList.remove('fade-in'); },300);
+  const content = document.createElement('div'); content.id='tab-content-'+tabId; content.className='tab-content';
+  content.innerHTML=`<textarea>${text}</textarea>`;
+  contentDiv.appendChild(content);
+
+  switchNoteTab(tabId);
   saveData();
 }
 
-function removeNoteTab(tab){
-  const id=tab.dataset.tab;
-  const content=document.getElementById('tab-content-'+id);
-  tab.classList.add('fade-out'); content.classList.add('fade-out');
-  setTimeout(()=>{ tab.remove(); content.remove(); saveData(); },300);
-}
-
-function selectNoteTab(id){
+function switchNoteTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  const tab=document.querySelector(`.tab[data-tab='${id}']`);
-  if(tab) tab.classList.add('active');
-  const content=document.getElementById('tab-content-'+id);
-  if(content) setTimeout(()=>content.classList.add('active'),10); // плавный переход
+  const tab=document.querySelector(`.tab[data-tab='${id}']`); if(tab) tab.classList.add('active');
+  const content=document.getElementById('tab-content-'+id); if(content) content.classList.add('active');
 }
 
-// ===== Свайпы =====
-const sections=['characters-section','npc-section','notes-section'];
-let currentSection=0;
+function removeNoteTab(id){
+  const tab=document.querySelector(`.tab[data-tab='${id}']`); if(tab) tab.remove();
+  const content=document.getElementById('tab-content-'+id); if(content) content.remove();
+  saveData();
+}
 
-function showSectionWithAnimation() {
-  sections.forEach((secId, idx) => {
-    const sec = document.getElementById(secId);
-    if(idx === currentSection) { sec.classList.add('active'); sec.style.transform='translateX(0)'; }
-    else if(idx < currentSection) { sec.classList.remove('active'); sec.style.transform='translateX(-100%)'; }
+// ===== Tab Bar =====
+let sections=['characters-section','npc-section','notes-section'], currentSection=0;
+function switchSection(index){ currentSection=index; showSectionWithAnimation(); }
+function showSectionWithAnimation(){
+  sections.forEach((secId, idx)=>{
+    const sec=document.getElementById(secId);
+    if(idx===currentSection){ sec.classList.add('active'); sec.style.transform='translateX(0)'; }
+    else if(idx<currentSection){ sec.classList.remove('active'); sec.style.transform='translateX(-100%)'; }
     else { sec.classList.remove('active'); sec.style.transform='translateX(100%)'; }
   });
+  document.querySelectorAll('#tab-bar button').forEach((btn, idx)=>{ if(idx===currentSection) btn.classList.add('active'); else btn.classList.remove('active'); });
 }
 
-let startX=0; let isSwiping=false;
-document.addEventListener('touchstart', e => { startX=e.touches[0].clientX; isSwiping=true; });
-document.addEventListener('touchmove', e => {
-  if(!isSwiping) return;
-  const deltaX=e.touches[0].clientX-startX;
-  sections.forEach((secId, idx) => {
-    const sec=document.getElementById(secId);
-    if(idx===currentSection) sec.style.transform=`translateX(${deltaX}px)`;
-    if(idx===currentSection-1) sec.style.transform=`translateX(${deltaX-100}%)`;
-    if(idx===currentSection+1) sec.style.transform=`translateX(${deltaX+100}%)`;
-  });
-});
-document.addEventListener('touchend', e => {
-  isSwiping=false;
-  const delta=e.changedTouches[0].clientX-startX;
-  if(delta>50 && currentSection>0) currentSection--;
-  if(delta<-50 && currentSection<sections.length-1) currentSection++;
-  showSectionWithAnimation();
-});
-
-document.addEventListener('keydown', e=>{
-  if(e.key==='ArrowLeft' && currentSection>0){ currentSection--; showSectionWithAnimation();}
-  if(e.key==='ArrowRight' && currentSection<sections.length-1){ currentSection++; showSectionWithAnimation();}
-});
-
+// ===== Инициализация =====
 loadData();
 showSectionWithAnimation();
+
 </script>
 </body>
 </html>
