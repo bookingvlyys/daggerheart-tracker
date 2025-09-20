@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Daggerheart Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#f2f2f7; color:#111; height:100vh; display:flex; flex-direction:column;}
+header {background:#fff; padding:12px; text-align:center; font-weight:600; border-bottom:1px solid #ddd;}
+.content {flex:1; overflow:hidden; position:relative;}
+.tabs-wrapper {display:flex; width:300%; height:100%; transition:transform 0.3s ease-in-out;}
+.tab-content {flex:1 0 100%; height:100%; overflow-y:auto; padding:16px; box-sizing:border-box;}
+.nav {display:flex; background:#fff; border-top:1px solid #ddd;}
+.nav-item {flex:1; text-align:center; padding:12px; font-size:14px; cursor:pointer; color:#666;}
+.nav-item.active {color:#007aff; font-weight:600;}
+.tracker {background:#fff; margin-bottom:12px; padding:12px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1); position:relative; transition:all 0.2s; cursor:grab;}
+.tracker.dragging {opacity:0.5;}
+.tracker input.name-edit{font-weight:600; font-size:16px; border:none; background:transparent; width:60%; outline:none; display:inline-block;}
+.tracker input {width:60px; margin:4px; padding:4px; text-align:center; border:1px solid #ddd; border-radius:6px;}
+.tracker .delete-btn {position:absolute; right:10px; top:10px; background:red; color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold; cursor:pointer;}
+textarea {width:100%; min-height:80px; padding:8px; border:1px solid #ddd; border-radius:8px; resize:vertical;}
+button {margin-top:6px; padding:6px 12px; border:none; border-radius:8px; background:#007aff; color:white; font-weight:600; cursor:pointer;}
+.note-tabs {display:flex; gap:6px; margin-bottom:8px;}
+.note-tab {flex:1; padding:6px; text-align:center; background:#eee; border-radius:8px; cursor:pointer; font-size:13px;}
+.note-tab.active {background:#007aff; color:#fff;}
+.hp-low {background:#ffe0e0;}
+.stress-high {background:#fff0b3;}
+.log-area {background:#fff; padding:8px; border-radius:8px; max-height:150px; overflow-y:auto; margin-top:8px; font-size:13px;}
+</style>
+</head>
+<body>
+<header>Daggerheart Tracker</header>
+<div class="content" id="swipe-area">
+  <div class="tabs-wrapper" id="tabs-wrapper">
+
+    <!-- Персонажи -->
+    <div class="tab-content" id="tab-players">
+      <button onclick="addPlayer()">Добавить персонажа</button>
+      <div id="players-container"></div>
+    </div>
+
+    <!-- Заметки -->
+    <div class="tab-content">
+      <div class="note-tabs" id="note-tabs"></div>
+      <textarea id="note-area" placeholder="Запиши заметки для этой сессии..."></textarea>
+      <button onclick="addNote()">Добавить заметку</button>
+    </div>
+
+    <!-- Бой -->
+    <div class="tab-content" id="tab-npcs">
+      <button onclick="addNPC()">Добавить NPC</button>
+      <div id="npcs-container"></div>
+      <div class="log-area" id="log-area"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-item active" onclick="showTab(0)">Персонажи</div>
+  <div class="nav-item" onclick="showTab(1)">Заметки</div>
+  <div class="nav-item" onclick="showTab(2)">Бой</div>
+</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+// Telegram WebApp
+const tg = window.Telegram.WebApp;
+tg.expand();
+tg.MainButton.setText("Сохранить и закрыть");
+tg.onEvent("mainButtonClicked", ()=>{
+    tg.sendData(JSON.stringify({players, npcs, notes, logEntries}));
+});
+
+// Вкладки и свайпы
+let currentTab=0;
+const tabsWrapper=document.getElementById("tabs-wrapper");
+const navItems=document.querySelectorAll(".nav-item");
+let startX=0;
+document.getElementById("swipe-area").addEventListener("touchstart", e=>{startX=e.touches[0].clientX});
+document.getElementById("swipe-area").addEventListener("touchend", e=>{
+  let endX=e.changedTouches[0].clientX;
+  if(startX-endX>50) showTab(currentTab+1);
+  else if(endX-startX>50) showTab(currentTab-1);
+});
+function updateSlide(){tabsWrapper.style.transform=`translateX(-${currentTab*100}%)`; navItems.forEach((n,i)=>n.classList.toggle("active",i===currentTab));}
+function showTab(index){ if(index>=0&&index<3){currentTab=index; updateSlide();}}
+
+// localStorage
+let players=JSON.parse(localStorage.getItem("players"))||[];
+let npcs=JSON.parse(localStorage.getItem("npcs"))||[];
+let currentNote=1;
+let notes=JSON.parse(localStorage.getItem("notes"))||{1:""};
+let logEntries=JSON.parse(localStorage.getItem("log"))||[];
+
+// ===== Лог =====
+function addLog(entry){ logEntries.push(entry); localStorage.setItem("log", JSON.stringify(logEntries)); renderLog(); }
+function renderLog(){ const log=document.getElementById("log-area"); log.innerHTML=""; logEntries.forEach(e=>{ const div=document.createElement("div"); div.textContent=e; log.appendChild(div); }); }
+renderLog();
+
+// ===== Персонажи =====
+function renderPlayers(){
+  const container=document.getElementById("players-container");
+  container.innerHTML="";
+  players.forEach((p,i)=>{
+    const div=document.createElement("div"); div.className="tracker"; div.draggable=true;
+    if(p.hp<=5) div.classList.add("hp-low");
+    div.innerHTML=`<input class="name-edit" value="${p.name}" data-index="${i}" data-type="name"> HP: <input type="number" value="${p.hp}" data-index="${i}" data-field="hp"> Стресс: <input type="number" value="${p.stress}" data-index="${i}" data-field="stress"> <button class="delete-btn" onclick="deletePlayer(${i})">×</button>`;
+    addDragEvents(div,"players"); container.appendChild(div);
+  });
+  localStorage.setItem("players", JSON.stringify(players));
+}
+function addPlayer(){ const name=prompt("Имя персонажа?"); if(name){ players.push({name:name,hp:20,stress:0}); renderPlayers(); } }
+function updatePlayer(index,field,value){ players[index][field]=value; renderPlayers(); localStorage.setItem("players",JSON.stringify(players)); if(field==="hp"||field==="stress") addLog(`${players[index].name}: ${field.toUpperCase()} -> ${value}`);}
+function deletePlayer(i){ if(confirm("Удалить персонажа?")){ addLog(`${players[i].name} удалён`); players.splice(i,1); renderPlayers(); } }
+document.getElementById("players-container").addEventListener("input", e=>{
+  if(e.target.dataset.type==="name") updatePlayer(parseInt(e.target.dataset.index),"name", e.target.value);
+  else if(e.target.tagName==="INPUT"){ const i=parseInt(e.target.dataset.index); const f=e.target.dataset.field; updatePlayer(i,f,parseInt(e.target.value)||0);}
+});
+renderPlayers();
+
+// ===== NPC =====
+function renderNPCs(){
+  const container=document.getElementById("npcs-container");
+  container.innerHTML="";
+  npcs.forEach((p,i)=>{
+    const div=document.createElement("div"); div.className="tracker"; div.draggable=true;
+    if(p.hp<=5) div.classList.add("hp-low");
+    if(p.stress>=5) div.classList.add("stress-high");
+    div.innerHTML=`<input class="name-edit" value="${p.name}" data-index="${i}" data-type="name"> HP: <input type="number" value="${p.hp}" data-index="${i}" data-field="hp"> Стресс: <input type="number" value="${p.stress}" data-index="${i}" data-field="stress"> <button class="delete-btn" onclick="deleteNPC(${i})">×</button>`;
+    addDragEvents(div,"npcs"); container.appendChild(div);
+  });
+  localStorage.setItem("npcs", JSON.stringify(npcs));
+  renderLog();
+}
+function addNPC(){ const name=prompt("Имя NPC?"); if(name){ npcs.push({name:name,hp:10,stress:0}); renderNPCs(); } }
+function updateNPC(index,field,value){ npcs[index][field]=value; renderNPCs(); localStorage.setItem("npcs",JSON.stringify(npcs)); addLog(`${npcs[index].name}: ${field.toUpperCase()} -> ${value}`);}
+function deleteNPC(i){ if(confirm("Удалить NPC?")){ addLog(`${npcs[i].name} удалён`); npcs.splice(i,1); renderNPCs(); } }
+document.getElementById("npcs-container").addEventListener("input", e=>{
+  if(e.target.dataset.type==="name") updateNPC(parseInt(e.target.dataset.index),"name", e.target.value);
+  else if(e.target.tagName==="INPUT"){ const i=parseInt(e.target.dataset.index); const f=e.target.dataset.field; updateNPC(i,f,parseInt(e.target.value)||0);}
+});
+renderNPCs();
+
+// ===== Drag & Drop =====
+let dragSrcEl=null;
+function addDragEvents(elem,type){
+  elem.addEventListener('dragstart', e=>{ dragSrcEl=elem; elem.classList.add("dragging"); });
+  elem.addEventListener('dragend', e=>{ elem.classList.remove("dragging"); });
+  elem.addEventListener('dragover', e=>{ e.preventDefault(); });
+  elem.addEventListener('drop', e=>{
+    e.preventDefault();
+    if(dragSrcEl===elem) return;
+    const list=type==="players"?players:npcs;
+    const fromIndex=parseInt(dragSrcEl.querySelector("input").dataset.index);
+    const toIndex=parseInt(elem.querySelector("input").dataset.index);
+    const moved=list.splice(fromIndex,1)[0];
+    list.splice(toIndex,0,moved);
+    type==="players"?renderPlayers():renderNPCs();
+  });
+}
+
+// ===== Заметки =====
+const noteTabsContainer=document.getElementById("note-tabs");
+const noteArea=document.getElementById("note-area");
+function renderNoteTabs(){
+  noteTabsContainer.innerHTML="";
+  Object.keys(notes).forEach(n=>{
+    const tab=document.createElement("div");
+    tab.className="note-tab"+(parseInt(n)===currentNote?" active":"");
+    tab.textContent="Игра "+n;
+    const delBtn=document.createElement("span"); delBtn.textContent="×"; delBtn.style.marginLeft="4px"; delBtn.style.cursor="pointer";
+    delBtn.onclick=(e)=>{ e.stopPropagation(); deleteNote(parseInt(n)); };
+    tab.onclick=()=>switchNote(parseInt(n));
+    tab.appendChild(delBtn);
+    noteTabsContainer.appendChild(tab);
+  });
+  const plus=document.createElement("div"); plus.className="note-tab"; plus.textContent="+"; plus.onclick=addNote;
+  noteTabsContainer.appendChild(plus);
+}
+function switchNote(n){ notes[currentNote]=noteArea.value; currentNote=n; noteArea.value=notes[n]; renderNoteTabs(); localStorage.setItem("notes", JSON.stringify(notes)); }
+function addNote(){ const newIndex=Math.max(...Object.keys(notes).map(k=>parseInt(k)))+1; notes[newIndex]=""; switchNote(newIndex); }
+function deleteNote(n){ if(confirm("Удалить заметку?")){ delete notes[n]; currentNote=Math.max(...Object.keys(notes).map(k=>parseInt(k)))||1; switchNote(currentNote); } }
+noteArea.addEventListener("input",()=>{ notes[currentNote]=noteArea.value; localStorage.setItem("notes", JSON.stringify(notes)); });
+noteArea.value=notes[currentNote];
+renderNoteTabs();
+</script>
+</body>
+</html>
