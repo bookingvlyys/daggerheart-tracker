@@ -3,47 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daggerheart Tracker</title>
+<title>Daggerheart Tracker iOS</title>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #f4f4f4; color: #333; }
-header { padding: 15px; background: #2E86AB; color: white; text-align: center; font-size: 1.2em; }
-.section { padding: 20px; min-height: 80vh; display: none; overflow-y: auto; }
-.section.active { display: block; }
-.character, .npc { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: left; box-shadow: 0 1px 3px rgba(0,0,0,0.1);}
-.char-name input, .npc-name input { width: 180px; padding: 3px 5px; margin-left: 5px; }
-.stat { margin-top: 5px; }
-.hp input, .stress input { width: 30px; height: 20px; margin-right: 3px; accent-color: #2E86AB; }
-.hope .star { font-size: 20px; cursor: pointer; color: gray; }
-.hope .star.filled { color: gold; }
-button { margin-top: 5px; padding: 5px 10px; border: none; border-radius: 5px; background: #2E86AB; color: white; cursor: pointer; }
-button:hover { background: #1B4F72; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #000; color: #fff; overflow-x: hidden;}
+header { padding: 15px; text-align: center; font-size: 1.2em; border-bottom: 1px solid #333; position: relative; z-index: 10; }
+.section { position: absolute; top: 60px; left: 0; width: 100%; padding: 20px; min-height: calc(100vh - 60px); overflow-y: auto; background: #000; color: #fff; transition: transform 0.3s ease, opacity 0.3s ease; }
+.section:not(.active) { opacity: 0; pointer-events: none; }
+.section.active { opacity: 1; pointer-events: auto; }
+.character, .npc { display: flex; background: #111; padding: 10px; border-radius: 12px; margin-bottom: 10px; align-items: flex-start; }
+.char-left, .npc-left { width: 60px; display: flex; flex-direction: column; align-items: center; margin-right: 10px; }
+.avatar-preview { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #333; margin-bottom: 5px; cursor: pointer; transition: transform 0.2s ease; }
+.avatar-preview.clicked { transform: scale(1.2); }
+.char-right, .npc-right { flex: 1; }
+input[type=text] { width: 180px; padding: 5px; margin-left: 5px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; }
+.stat { margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+.stat-label { width: 70px; }
+.block { width: 25px; height: 25px; border-radius: 5px; border: 1px solid #333; cursor: pointer; background: #111; transition: all 0.2s; }
+.block.hp-filled { background: #0f0; }
+.block.stress-filled { background: #555; }
+.hope .star { font-size: 20px; cursor: pointer; color: gray; transition: transform 0.2s; }
+.hope .star.filled { color: gold; transform: scale(1.2); }
+button { margin-top: 8px; padding: 5px 12px; border: none; border-radius: 10px; background: #222; color: #fff; cursor: pointer; }
+button:hover { background: #333; }
 .tabs { display: flex; margin-bottom: 5px; gap: 5px; overflow-x: auto; }
-.tab { padding: 5px 10px; border-radius: 5px; background: #ddd; cursor: pointer; white-space: nowrap; }
-.tab.active { background: #2E86AB; color: white; }
-.tab-content { display: none; margin-top: 5px; }
-.tab-content.active { display: block; }
-textarea { width: 100%; height: 80px; resize: vertical; }
+.tab { padding: 5px 10px; border-radius: 8px; background: #222; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; opacity: 1; transform: scale(1); transition: all 0.3s ease;}
+.tab.active { background: #555; }
+.tab-content { display: none; margin-top: 5px; opacity: 0; transform: scale(0.95); transition: all 0.3s ease; }
+.tab-content.active { display: block; opacity: 1; transform: scale(1); }
+textarea { width: 100%; height: 80px; resize: vertical; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; padding: 5px; }
+.avatar-input { display: none; }
+.fade-in { animation: fadeIn 0.3s forwards; }
+.fade-out { animation: fadeOut 0.3s forwards; }
+@keyframes fadeIn { from {opacity: 0; transform: scale(0.8);} to {opacity: 1; transform: scale(1);} }
+@keyframes fadeOut { from {opacity: 1; transform: scale(1);} to {opacity: 0; transform: scale(0.8);} }
+.remove-btn { background: #800; color: #fff; font-size: 14px; border-radius: 8px; padding: 2px 6px; cursor:pointer;}
+.remove-btn:hover { background: #a00; }
 </style>
 </head>
 <body>
 
-<header>Daggerheart Tracker (Свайпы: Влево/Вправо)</header>
+<header>Daggerheart Tracker iOS</header>
 
-<!-- Персонажи -->
 <div class="section active" id="characters-section">
   <h2>Персонажи</h2>
   <div id="characters-container"></div>
   <button onclick="addCharacter()">Добавить персонажа</button>
 </div>
 
-<!-- NPC -->
 <div class="section" id="npc-section">
   <h2>NPC / Бой</h2>
   <div id="npc-container"></div>
   <button onclick="addNPC()">Добавить NPC</button>
 </div>
 
-<!-- Заметки -->
 <div class="section" id="notes-section">
   <h2>Заметки</h2>
   <div class="tabs" id="notes-tabs"></div>
@@ -52,23 +64,25 @@ textarea { width: 100%; height: 80px; resize: vertical; }
 </div>
 
 <script>
-// ===== LocalStorage Helpers =====
+// ===== LocalStorage =====
 function saveData() {
   const characters = [];
   document.querySelectorAll('.character').forEach(c => {
     characters.push({
+      avatar: c.querySelector('.avatar-preview').src,
       name: c.querySelector('.name-input').value,
-      hp: Array.from(c.querySelectorAll('.hp input')).map(i => i.checked),
-      stress: Array.from(c.querySelectorAll('.stress input')).map(i => i.checked),
+      hp: Array.from(c.querySelectorAll('.block.hp')).map(b => b.classList.contains('hp-filled')),
+      stress: Array.from(c.querySelectorAll('.block.stress')).map(b => b.classList.contains('stress-filled')),
       hope: Array.from(c.querySelectorAll('.hope .star')).map(s => s.classList.contains('filled'))
     });
   });
   const npcs = [];
   document.querySelectorAll('.npc').forEach(n => {
     npcs.push({
+      avatar: n.querySelector('.avatar-preview').src,
       name: n.querySelector('.npc-name').value,
-      hp: Array.from(n.querySelectorAll('.hp input')).map(i => i.checked),
-      stress: Array.from(n.querySelectorAll('.stress input')).map(i => i.checked),
+      hp: Array.from(n.querySelectorAll('.block.hp')).map(b => b.classList.contains('hp-filled')),
+      stress: Array.from(n.querySelectorAll('.block.stress')).map(b => b.classList.contains('stress-filled')),
       hope: Array.from(n.querySelectorAll('.hope .star')).map(s => s.classList.contains('filled'))
     });
   });
@@ -76,10 +90,7 @@ function saveData() {
   document.querySelectorAll('.tab').forEach(tab => {
     const id = tab.dataset.tab;
     const content = document.getElementById('tab-content-' + id);
-    notes.push({
-      title: tab.textContent,
-      text: content.querySelector('textarea').value
-    });
+    notes.push({ title: tab.textContent.replace('🗑️',''), text: content.querySelector('textarea').value });
   });
   localStorage.setItem('daggerheart', JSON.stringify({characters, npcs, notes}));
 }
@@ -88,144 +99,207 @@ function loadData() {
   const data = JSON.parse(localStorage.getItem('daggerheart') || '{}');
   if(data.characters) data.characters.forEach(c => addCharacter(c));
   if(data.npcs) data.npcs.forEach(n => addNPC(n));
-  if(data.notes) {
-    noteCounter = 0;
-    data.notes.forEach(n => addNoteTab(n.title, n.text));
-  }
+  if(data.notes) { noteCounter = 0; data.notes.forEach(n => addNoteTab(n.title, n.text)); }
 }
 
-// ===== Персонажи / NPC =====
-function createStatRow(label, type, values) {
-  const div = document.createElement('div');
-  div.className = 'stat';
-  div.innerHTML = label + ': ';
-  const container = document.createElement('span');
-  container.className = type;
-  for (let i = 0; i < 7; i++) {
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    if(values && values[i]) checkbox.checked = true;
-    checkbox.addEventListener('change', saveData);
-    container.appendChild(checkbox);
+// ===== Стат блоки =====
+function createBlockRow(label, type, values) {
+  const div = document.createElement('div'); div.className='stat';
+  const lbl = document.createElement('div'); lbl.className='stat-label'; lbl.textContent=label;
+  div.appendChild(lbl);
+  for(let i=0;i<7;i++){
+    const block=document.createElement('div'); block.className='block '+type;
+    if(values && values[i]) block.classList.add(type==='hp'?'hp-filled':'stress-filled');
+    block.addEventListener('click', ()=>{
+      block.classList.toggle(type==='hp'?'hp-filled':'stress-filled');
+      block.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}], {duration:150});
+      saveData();
+    });
+    div.appendChild(block);
   }
-  div.appendChild(container);
   return div;
 }
 
-function createHopeRow(values) {
-  const div = document.createElement('div');
-  div.className = 'stat';
-  div.innerHTML = 'Hope: ';
-  const container = document.createElement('span');
-  container.className = 'hope';
-  for (let i = 0; i < 7; i++) {
-    const star = document.createElement('span');
-    star.className = 'star';
-    star.dataset.value = i + 1;
-    star.textContent = (values && values[i]) ? '★' : '☆';
-    if(values && values[i]) star.classList.add('filled');
-    star.addEventListener('click', () => {
-      container.querySelectorAll('.star').forEach((s, idx) => {
-        if(idx <= i) { s.classList.add('filled'); s.textContent='★'; }
-        else { s.classList.remove('filled'); s.textContent='☆'; }
+function createHopeRow(values){
+  const div=document.createElement('div'); div.className='stat';
+  const lbl=document.createElement('div'); lbl.className='stat-label'; lbl.textContent='Hope';
+  div.appendChild(lbl);
+  const container=document.createElement('span'); container.className='hope';
+  for(let i=0;i<7;i++){
+    const star=document.createElement('span'); star.className='star'; star.dataset.value=i+1; star.textContent=(values&&values[i])?'★':'☆';
+    if(values&&values[i]) star.classList.add('filled');
+    star.addEventListener('click', ()=>{
+      container.querySelectorAll('.star').forEach((s,idx)=>{
+        if(idx<=i){ s.classList.add('filled'); s.textContent='★'; s.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}],{duration:150}); }
+        else{s.classList.remove('filled'); s.textContent='☆';}
       });
       saveData();
     });
     container.appendChild(star);
   }
-  div.appendChild(container);
-  return div;
+  div.appendChild(container); return div;
 }
 
-function addCharacter(data) {
-  const div = document.createElement('div');
-  div.className = 'character';
-  div.innerHTML = 'Имя: <input type="text" class="name-input" placeholder="Имя персонажа">';
-  if(data && data.name) div.querySelector('.name-input').value = data.name;
-  div.querySelector('.name-input').addEventListener('input', saveData);
-  div.appendChild(createStatRow('HP','hp', data?.hp));
-  div.appendChild(createStatRow('Stress','stress', data?.stress));
-  div.appendChild(createHopeRow(data?.hope));
+// ===== Аватар =====
+function addAvatarLogic(div){
+  const input = div.querySelector('.avatar-input');
+  const preview = div.querySelector('.avatar-preview');
+  preview.addEventListener('click', ()=>{
+    preview.classList.add('clicked');
+    setTimeout(()=>preview.classList.remove('clicked'),200);
+    input.click();
+  });
+  input.addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        preview.src = ev.target.result;
+        preview.animate([{transform:'scale(0.8)'},{transform:'scale(1)'}], {duration:200});
+        saveData();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+// ===== Персонажи =====
+function addCharacter(data){
+  const div=document.createElement('div'); div.className='character fade-in';
+  div.innerHTML=`
+    <div class="char-left">
+      <img class="avatar-preview" src="${data?.avatar||''}" alt="Аватар"/>
+      <input type="file" class="avatar-input" accept="image/*"/>
+    </div>
+    <div class="char-right">
+      Имя: <input type="text" class="name-input" placeholder="Имя персонажа">
+      <button class="remove-btn" onclick="removeCharacter(this)">🗑️</button>
+    </div>
+  `;
+  if(data?.name) div.querySelector('.name-input').value=data.name;
+  div.querySelector('.name-input').addEventListener('input',saveData);
+  addAvatarLogic(div);
+  div.querySelector('.char-right').appendChild(createBlockRow('HP','hp', data?.hp));
+  div.querySelector('.char-right').appendChild(createBlockRow('Stress','stress', data?.stress));
+  div.querySelector('.char-right').appendChild(createHopeRow(data?.hope));
   document.getElementById('characters-container').appendChild(div);
+  setTimeout(()=>div.classList.remove('fade-in'),300);
   saveData();
 }
 
-function addNPC(data) {
-  const div = document.createElement('div');
-  div.className = 'npc';
-  div.innerHTML = 'Имя: <input type="text" class="npc-name" placeholder="Имя NPC">';
-  if(data && data.name) div.querySelector('.npc-name').value = data.name;
-  div.querySelector('.npc-name').addEventListener('input', saveData);
-  div.appendChild(createStatRow('HP','hp', data?.hp));
-  div.appendChild(createStatRow('Stress','stress', data?.stress));
-  div.appendChild(createHopeRow(data?.hope));
+function removeCharacter(btn){
+  const div=btn.closest('.character');
+  div.classList.add('fade-out');
+  setTimeout(()=>{ div.remove(); saveData(); },300);
+}
+
+// ===== NPC =====
+function addNPC(data){
+  const div=document.createElement('div'); div.className='npc fade-in';
+  div.innerHTML=`
+    <div class="npc-left">
+      <img class="avatar-preview" src="${data?.avatar||''}" alt="Аватар"/>
+      <input type="file" class="avatar-input" accept="image/*"/>
+    </div>
+    <div class="npc-right">
+      Имя: <input type="text" class="npc-name" placeholder="Имя NPC">
+      <button class="remove-btn" onclick="removeNPC(this)">🗑️</button>
+    </div>
+  `;
+  if(data?.name) div.querySelector('.npc-name').value=data.name;
+  div.querySelector('.npc-name').addEventListener('input',saveData);
+  addAvatarLogic(div);
+  div.querySelector('.npc-right').appendChild(createBlockRow('HP','hp', data?.hp));
+  div.querySelector('.npc-right').appendChild(createBlockRow('Stress','stress', data?.stress));
+  div.querySelector('.npc-right').appendChild(createHopeRow(data?.hope));
   document.getElementById('npc-container').appendChild(div);
+  setTimeout(()=>div.classList.remove('fade-in'),300);
   saveData();
+}
+
+function removeNPC(btn){
+  const div=btn.closest('.npc');
+  div.classList.add('fade-out');
+  setTimeout(()=>{ div.remove(); saveData(); },300);
 }
 
 // ===== Заметки =====
-let noteCounter = 0;
-function addNoteTab(title, text) {
+let noteCounter=0;
+function addNoteTab(title,text){
   noteCounter++;
-  const tab = document.createElement('div');
-  tab.className = 'tab';
-  tab.textContent = title || 'Tab ' + noteCounter;
-  tab.dataset.tab = noteCounter;
-  tab.addEventListener('click', () => selectNoteTab(noteCounter));
+  const tab=document.createElement('div'); tab.className='tab fade-in';
+  tab.textContent=title||'Tab '+noteCounter; tab.dataset.tab=noteCounter;
+  const removeBtn=document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.textContent='🗑️'; removeBtn.onclick=()=>removeNoteTab(tab); 
+  tab.appendChild(removeBtn);
+  tab.addEventListener('click',()=>selectNoteTab(noteCounter));
   document.getElementById('notes-tabs').appendChild(tab);
 
-  const content = document.createElement('div');
-  content.className = 'tab-content';
-  content.id = 'tab-content-' + noteCounter;
-  const textarea = document.createElement('textarea');
-  if(text) textarea.value = text;
-  textarea.addEventListener('input', saveData);
-  content.appendChild(textarea);
+  const content=document.createElement('div'); content.className='tab-content fade-in'; content.id='tab-content-'+noteCounter;
+  const textarea=document.createElement('textarea'); if(text) textarea.value=text;
+  textarea.addEventListener('input',saveData); content.appendChild(textarea);
   document.getElementById('notes-contents').appendChild(content);
 
   selectNoteTab(noteCounter);
+  setTimeout(()=>{ tab.classList.remove('fade-in'); content.classList.remove('fade-in'); },300);
   saveData();
 }
 
-function selectNoteTab(id) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  const tab = document.querySelector(`.tab[data-tab='${id}']`);
+function removeNoteTab(tab){
+  const id=tab.dataset.tab;
+  const content=document.getElementById('tab-content-'+id);
+  tab.classList.add('fade-out'); content.classList.add('fade-out');
+  setTimeout(()=>{ tab.remove(); content.remove(); saveData(); },300);
+}
+
+function selectNoteTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const tab=document.querySelector(`.tab[data-tab='${id}']`);
   if(tab) tab.classList.add('active');
-  const content = document.getElementById('tab-content-' + id);
-  if(content) content.classList.add('active');
+  const content=document.getElementById('tab-content-'+id);
+  if(content) setTimeout(()=>content.classList.add('active'),10); // плавный переход
 }
 
-// ===== Свайпы между секциями =====
-const sections = ['characters-section', 'npc-section', 'notes-section'];
-let currentSection = 0;
+// ===== Свайпы =====
+const sections=['characters-section','npc-section','notes-section'];
+let currentSection=0;
 
-function showSection(index) {
-  document.querySelectorAll('.section').forEach((sec, idx) => {
-    sec.classList.toggle('active', idx === index);
+function showSectionWithAnimation() {
+  sections.forEach((secId, idx) => {
+    const sec = document.getElementById(secId);
+    if(idx === currentSection) { sec.classList.add('active'); sec.style.transform='translateX(0)'; }
+    else if(idx < currentSection) { sec.classList.remove('active'); sec.style.transform='translateX(-100%)'; }
+    else { sec.classList.remove('active'); sec.style.transform='translateX(100%)'; }
   });
-  currentSection = index;
 }
 
-let startX = 0;
-document.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+let startX=0; let isSwiping=false;
+document.addEventListener('touchstart', e => { startX=e.touches[0].clientX; isSwiping=true; });
+document.addEventListener('touchmove', e => {
+  if(!isSwiping) return;
+  const deltaX=e.touches[0].clientX-startX;
+  sections.forEach((secId, idx) => {
+    const sec=document.getElementById(secId);
+    if(idx===currentSection) sec.style.transform=`translateX(${deltaX}px)`;
+    if(idx===currentSection-1) sec.style.transform=`translateX(${deltaX-100}%)`;
+    if(idx===currentSection+1) sec.style.transform=`translateX(${deltaX+100}%)`;
+  });
+});
 document.addEventListener('touchend', e => {
-  const endX = e.changedTouches[0].clientX;
-  if(endX - startX > 50) showSection(Math.max(0, currentSection - 1));
-  if(startX - endX > 50) showSection(Math.min(sections.length - 1, currentSection + 1));
+  isSwiping=false;
+  const delta=e.changedTouches[0].clientX-startX;
+  if(delta>50 && currentSection>0) currentSection--;
+  if(delta<-50 && currentSection<sections.length-1) currentSection++;
+  showSectionWithAnimation();
 });
 
-// Стрелки на клавиатуре
-document.addEventListener('keydown', e => {
-  if(e.key === 'ArrowLeft') showSection(Math.max(0, currentSection - 1));
-  if(e.key === 'ArrowRight') showSection(Math.min(sections.length - 1, currentSection + 1));
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft' && currentSection>0){ currentSection--; showSectionWithAnimation();}
+  if(e.key==='ArrowRight' && currentSection<sections.length-1){ currentSection++; showSectionWithAnimation();}
 });
 
-// ===== Инициализация =====
 loadData();
-if(document.getElementById('characters-container').children.length===0) addCharacter();
-if(document.getElementById('npc-container').children.length===0) addNPC();
-if(document.getElementById('notes-tabs').children.length===0) addNoteTab();
+showSectionWithAnimation();
 </script>
 </body>
 </html>
